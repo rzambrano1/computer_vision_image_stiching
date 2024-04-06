@@ -44,7 +44,7 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
     
     Uses mouse clicks to collect the coordinates dirctly from the matplotlib images.
     
-    The number of correspondent points (clicks) on each image must match.
+    The number of correspondent points (clicks) on each image must match. Additionally, the client must provide at least four corresponding points.
 
     Given this is an client-driven function there are no guarantees the selected correspondent points actually belongs to the same object. The client's judgement
     will be used in desiding which point are correspondent.
@@ -76,7 +76,8 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
     Throws
     ------
     Raises:AssertionError, if the number of clicked corresponding points in image view A is not equal to number of clicked corresponding points in image view B. Compare length of coordinates.
-    
+    Raises:AssertionError, if the number of clicked corresponding points is less than four
+
     Examples
     --------
     >>>
@@ -142,6 +143,7 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
     plt.show()
 
     assert len(pixel_coordinates_img_A) == len(pixel_coordinates_img_B), 'You must identify and click correspondent points on each image. Clicks on view A are different from clicks in view B'
+    assert len(pixel_coordinates_img_A) > 3, " Provide at least four pairs of corresponfing points"
 
     return np.transpose(np.array(pixel_coordinates_img_A)), np.transpose(np.array(pixel_coordinates_img_B)), np.transpose(np.array(data_coordinates_img_A)), np.transpose(np.array(data_coordinates_img_B))
 
