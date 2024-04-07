@@ -35,7 +35,11 @@ from skimage.color import hsv2rgb
 # Functions Import
 # None
 
-# Helper Functions
+####################
+# Helper Functions #
+####################
+
+# Methods to scale coordinates
 
 def scale_down(arr):
     """
@@ -78,6 +82,55 @@ def scale_back(arr,rmin,rmax):
         scaled_up[:,i] = np.array([x_scaled,y_scaled])
         
     return scaled_up
+
+# Methods to handle homogeneous coordinates
+
+def to_homogeneous(arr):
+    """
+    Assumes a numpy array with [x,y]' coordinates from corresponding points with shape 2xP. Top row are x values and bottom row are y values.
+    Returns a 3xP numpy array with homogeneous coordinates
+    """
+    P = arr.shape[1] # Number of identified corresponding points
+    ones = np.ones((1,P))
+
+    homogeneous_coord_arr = np.vstack((arr,ones))
+    
+    return homogeneous_coord_arr
+
+def from_homogeneous(arr):
+    """
+    Assumes a numpy array with [x,y,w]' homogeneous coordinates with shape 3xP. 
+    Returns a 2xP numpy array with 2D coordinates
+    """
+    P = arr.shape[1] # Number of identified corresponding points
+    
+    xy_coord_arr = np.zeros((2,P))
+    
+    for indx in range(P):
+        xy_coord_arr[0,indx] = arr[0,indx]/arr[2,indx]
+        xy_coord_arr[1,indx] = arr[1,indx]/arr[2,indx]
+        
+    return xy_coord_arr
+
+# Method to estimate points in image view B using homography matrix
+
+def homogeneous_transform_coord(arr,H):
+    """
+    Assumes an array of points in homogeneous coordinates with shape=3xP and a homography matrix with shape 3x3
+    Returns an array of points transformed using the homography matrix
+    """
+    P = arr.shape[1] # Number of identified corresponding points
+    
+    transformed_xy_coord_arr = np.zeros((3,P))
+    
+    for indx in range(P):
+        transformed_xy_coord_arr[:,indx] = np.matmul(H,arr[:,indx])
+        
+    return transformed_xy_coord_arr
+
+#################################################
+# Main function or Major function of the module #
+#################################################
 
 def computeH(t1: npt.NDArray, t2: npt.NDArray)-> npt.NDArray:
     """
@@ -148,13 +201,28 @@ def computeH(t1: npt.NDArray, t2: npt.NDArray)-> npt.NDArray:
         
         L = np.vstack((L,rows))
     
+    # Method as proposed in class
+
     L_transposed = np.transpose(L)
     
     LtL = np.matmul(L_transposed, L)
     
     eigenvalues, eigenvectors = np.linalg.eig(LtL) 
     
-    homography_matrix = eigenvectors[:,0]
+    min_eigenval_position = np.argmin(eigenvalues)
+    
+    homography_matrix = eigenvectors[:,min_eigenval_position]
+
+    # SVD method, not used (commented out) but documented
+
+    # U, S, V = np.linalg.svd(L)  # When compute_uv is True, the result include:
+    #                             # - Vector(s) with the singular values, within each vector sorted in descending order.
+    #                             #   We are interested in the smallest singular value.
+    #                             # - Vh are unitary. The rows of Vh are the eigenvectors of L'L and the columns of U
+    #                             #   are the eigenvectors of LL'. So we are interested in the last row of Vh
+    #                             # source: https://numpy.org/doc/stable/reference/generated/numpy.linalg.svd.html
+    
+    # homography_matrix_svd = V[-1,:]
 
     return homography_matrix
     
