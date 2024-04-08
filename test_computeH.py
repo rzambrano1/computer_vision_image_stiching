@@ -99,7 +99,7 @@ def main(img_view1,img_view2,correspond_points_in_A,correspond_points_in_B):
 
     # Next step is computing matrix h
     h_test1 = computeH(cc1_t_scaled,cc2_t_scaled)
-    print(h_test1.shape)
+    
     H_test1 = h_test1.reshape((3,3))
 
     print('\nThis is the homography matrix:\n')
@@ -145,7 +145,7 @@ def main(img_view1,img_view2,correspond_points_in_A,correspond_points_in_B):
     plt.scatter(estimated_cc2_2D[0,:],estimated_cc2_2D[1,:],c='red')
     
     plt.show()
-    
+
     return 0
 
 if __name__ == "__main__":
