@@ -139,12 +139,12 @@ def inverse_warping(im_view_b, H_inv, box, r_i_min, r_i_max):
 def warpImage(inputIm: npt.NDArray[np.uint8], 
               refIm:npt.NDArray[np.uint8], 
               H: npt.NDArray,
-              corr_points_input: npt.NDArray = None,
-              corr_points_ref: npt.NDArray = None
+              t1_min : float,
+              t1_max : float
               )-> Tuple[npt.NDArray[np.uint8],npt.NDArray[np.uint8]]:
     """
-    Assumes as input an image inputIm, a reference image refIm, and a 3x3 homography matrix H. corr_points_input and corr_points_ref are corresponding points 
-    used to calculate H
+    Assumes as input an image inputIm, a reference image refIm, and a 3x3 homography matrix H. t1_min and t1_max are the minimum and maximun points 
+    from inputIm, they are in the output of the pre_process_correspondences() helper function used to calculate H
     Returns two images as outputs. The first image, warpIm, is the input image inputIm warped according to H to fit within the frame of the reference image refIm. 
     The second output image, mergeIm, is a single mosaic image with a larger field of view containing both input images
 
@@ -152,8 +152,8 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
         inputIm, a matrix with dimmensions MxNx3 of data type uint8 that represents a view of an image
         refIm, a matrix with dimmensions MxNx3 of data type uint8 that represents a view of an image
         H, homography_matrix, the 3x3 homography matrix H associated with the two images
-        corr_points_input, a numpy array with dimension 2xP with coordinates for corresponding points from inputIm (image view A)
-        corr_points_ref, a numpy array with dimension 2xP with coordinates for corresponding points from refIm (image view B)
+        corr_points_input, a float minimum value of inputIm
+        corr_points_ref, a float maximum value of inputIm
     
     Output:
         warpIm, a matrix with dimmensions MxNx3 of data type uint8 that represents inputIm warped
@@ -164,10 +164,8 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     inputIM : np.ndarray [shape=(M,N,3)]
     refIm : np.ndarray [shape=(M,N,3)]
     H : np.ndarray [shape=(3,3)]
-    corr_points_input : np.ndarray [shape=(2,P)]
-    corr_points_ref : np.ndarray [shape=(2,P)]
-    
-    P > 3
+    t1_min : float
+    t1_max : float
 
     Returns
     -------
@@ -188,9 +186,8 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     assert refIm.shape[2] == 3, 'Expected a 3-channel array.'
     assert H.shape == (3,3), 'The homography matrix parameter (H) must be a (3,3) array.'
 
-    # The min and max values for inputIm are required
-    _, t1_test_min, t1_test_max, t2_test_min, t2_test_max = pre_process_correspondences(corr_points_input,corr_points_ref)
-
+    # The min and max values (t1_min, t1_max) for inputIm are required
+    
     # Since the HW requires inverse warp we need the inverse of the homography matrix
     H_inv = np.linalg.inv(H)
 
@@ -212,7 +209,7 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     ])
 
     # Calculate corners for bounding box
-    bounding_box = calculate_inverse_frame(frame_ref, H_inv, t1_test_min, t1_test_max)
+    bounding_box = calculate_inverse_frame(frame_ref, H_inv, t1_min, t1_max)
 
     # Finding the dimensions of the bounding box
     bounding_box_width = np.round(np.max(bounding_box[0,:])).astype(int)
@@ -221,6 +218,40 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     # Creating an array to record the warped points
     empty_warpIm = np.zeros((bounding_box_height,bounding_box_width,3))
 
-    warpIm = inverse_warping(refIm, H_inv, empty_warpIm, t1_test_min, t1_test_max)
+    warpIm = inverse_warping(refIm, H_inv, empty_warpIm, t1_min, t1_max)
+
+    ### Staring the block for mergeIm ###
+
+    # Create an empty mosaic
+
+    mosaic_width = max(inputIm.shape[1],warpIm.shape[1])
+    mosaic_heigth = max(inputIm.shape[0],warpIm.shape[0])
+    mosaic_frame = np.zeros((mosaic_heigth,mosaic_width,3))
+    mosaic_frame.shape
+
+    # First populate the empty mosaic with the destination image
+
+    width_input = inputIm.shape[1]
+    heigth_input = inputIm.shape[0]
+
+    for i in range(width_input):
+        for j in range(heigth_input):
+            if inputIm[j,i,:].any() > 0:
+                mosaic_frame[j,i,:] = inputIm[j,i,:]
+    
+    # Finding non-empty pixels in warped image and averaging them with existing pixels if non empty, otherwise populate them with warped image values
+
+    width_warped = warpIm.shape[1]
+    heigth_warped = warpIm.shape[0]
+
+    for i in range(width_warped):
+        for j in range(heigth_warped):
+            if warpIm[j,i,:].any() > 0:
+                if mosaic_frame[j,i,:].any() > 0:
+                    mosaic_frame[j,i,:] = (mosaic_frame[j,i,:] + warpIm[j,i,:])/2
+                else:
+                    mosaic_frame[j,i,:] = warpIm[j,i,:]
+
+    mergeIm = mosaic_frame.astype(np.uint8)
 
     return warpIm, mergeIm
