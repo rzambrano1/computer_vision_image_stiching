@@ -100,7 +100,7 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
     
     def on_left_click(event):
         if event.button is MouseButton.LEFT:
-            pixel_coordinates_img_A.append((event.x,event.y))
+            pixel_coordinates_img_A.append((event.x,event.y)) # Swap x <-> y in all
             data_coordinates_img_A.append((event.xdata,event.ydata))
             print('Image View A ->',f'data coords {event.xdata} {event.ydata},',
                 f'pixel coords {event.x} {event.y}')

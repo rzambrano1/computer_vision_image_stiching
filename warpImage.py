@@ -98,7 +98,8 @@ def inverse_warping(im_view_b, H_inv, box, r_i_min, r_i_max):
                 [0]
             ])
 
-    for j in range(w):
+    print('Initializing coordinates array...\nMay take a few minutes...')
+    for j in tqdm(range(w)):
         for i in range(h):
             #Create a coordinate
             new_coord = np.array([
@@ -115,7 +116,8 @@ def inverse_warping(im_view_b, H_inv, box, r_i_min, r_i_max):
     
     # Populating RGB intensities in warped
 
-    for indx in range(coord.shape[1]):
+    print('Populating RGB intensities in warped images...')
+    for indx in tqdm(range(coord.shape[1])):
         j,i = tuple(coord[:,indx])
         j_prime,i_prime, = tuple(warped_coord[:,indx].astype(int))
         try:
@@ -189,6 +191,7 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     # The min and max values (t1_min, t1_max) for inputIm are required
     
     # Since the HW requires inverse warp we need the inverse of the homography matrix
+    print('Calculating inverse of homography matrix...')
     H_inv = np.linalg.inv(H)
 
     # Recording dimensions of image views
@@ -208,6 +211,7 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
         [0, ref_height, ref_height, 0]
     ])
 
+    print('Calculating bounding box and initializing empty warped image...')
     # Calculate corners for bounding box
     bounding_box = calculate_inverse_frame(frame_ref, H_inv, t1_min, t1_max)
 
@@ -218,10 +222,12 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     # Creating an array to record the warped points
     empty_warpIm = np.zeros((bounding_box_height,bounding_box_width,3))
 
+    print('Creating warped image...')
     warpIm = inverse_warping(refIm, H_inv, empty_warpIm, t1_min, t1_max)
 
     ### Staring the block for mergeIm ###
 
+    print('Creating image mosaic...')
     # Create an empty mosaic
 
     mosaic_width = max(inputIm.shape[1],warpIm.shape[1])
@@ -234,7 +240,8 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     width_input = inputIm.shape[1]
     heigth_input = inputIm.shape[0]
 
-    for i in range(width_input):
+    print('Populating image with detination image...')
+    for i in tqdm(range(width_input)):
         for j in range(heigth_input):
             if inputIm[j,i,:].any() > 0:
                 mosaic_frame[j,i,:] = inputIm[j,i,:]
@@ -244,6 +251,7 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     width_warped = warpIm.shape[1]
     heigth_warped = warpIm.shape[0]
 
+    print('Populating image with warped image...')
     for i in range(width_warped):
         for j in range(heigth_warped):
             if warpIm[j,i,:].any() > 0:
