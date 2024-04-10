@@ -181,20 +181,31 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
     assert refIm.shape[2] == 3, 'Expected a 3-channel array.'
     assert H.shape == (3,3), 'The homography matrix parameter (H) must be a (3,3) array.'
     
+    # This code follows the same approach as warpImage_old.py (The one I developed from the scratch with the book)
+    # This approach was calculating a frame, creating an empty image, and then filling the image. In the case of the warped image
+    # using the homography matrix to translate points and in the case of the merged image taking points from both images. 
+    # However, I had to incorporate adaptations from explainers and examples to make it work. I put the steps to showcase the approach was similar to 
+    # warpImage_old.py
+
     # Since the HW requires inverse warp we need the inverse of the homography matrix
     print('Calculating inverse of homography matrix...')
     H_inv = np.linalg.inv(H)
 
     print('Creating mosaic...')
     # Recording dimensions of image views
-    inputH, inputW, c = inputIm.shape
-    outputH, outputW, c = refIm.shape
+    input_height, input_width, c = inputIm.shape
+    output_height, output_width, c = refIm.shape
+
+    # Initializing corners
     min_x = float("inf")
     min_y = float("inf")
     max_x = float("-inf")
     max_y = float("-inf")
-    cornersi =  [(0,0), (inputH, inputW), (0, inputW), (inputH, 0)]
-    cornerso =  [(0,0), (inputH, inputW), (0, inputW), (inputH, 0)]
+
+    # Calculate corners for bounding box
+    cornersi =  [(0,0), (input_height, input_width), (0, input_width), (input_height, 0)]
+    cornerso =  [(0,0), (input_height, input_width), (0, input_width), (input_height, 0)]
+
     for i,j in cornersi:
             x, y, w = np.matmul(H, [j , i, 1])
             x = x/w
@@ -207,7 +218,11 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
                 max_y = int(y)
             if y < min_y:
                 min_y = int(y)
+    
+    # Creating an empty array to record the warped points
     warpIm = np.zeros((max_y - min_y,max_x - min_x, 3))
+
+    # Filling the array with the warped image
     for i in range(0, max_x - min_x):
         for j in range (0, max_y - min_y):
             x, y, w = np.matmul(H_inv, [i + min_x, j + min_y, 1])
@@ -216,13 +231,15 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
             a = 0
             b = 0
             c = 0
-            if not (y < 0 or y >= inputH or x < 0 or x >= inputW):
+            if not (y < 0 or y >= input_height or x < 0 or x >= input_width):
                 a, b, c = inputIm[y, x, :]
             warpIm[j, i, :] = [a/255, b/255, c/255]
     oldx = min_x
     oldy = min_y
     oldmx = max_x
     oldmy = max_y
+
+    # Calculating size of merged image
     for i,j in cornerso:
         if j > max_x:
             max_x = int(j)
@@ -232,7 +249,11 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
             max_y = int(i)
         if i < min_y:
             min_y = int(i)
+    
+    # Creating an empty array to record the merged image
     mergeIm = np.zeros(((max_y - min_y),(max_x - min_x), 3))
+
+    # Final step, filling the merged image frame
     for i in range(min_x, max_x):
         for j in range (min_y, max_y):
             a = 0
@@ -241,10 +262,10 @@ def warpImage(inputIm: npt.NDArray[np.uint8],
             if not (j < oldy or j >= oldmy or i < oldx or i >= oldmx):
                 a, b, c = warpIm[j - oldy, i - oldx, :]
                 if a == 0.0 or b == 0.0 or c == 0.0:
-                    if not (j < 0 or j >= outputH or i < 0 or i >= outputW):
+                    if not (j < 0 or j >= output_height or i < 0 or i >= output_width):
                         a, b, c = refIm[j, i, :]/255
             else:
-                if not (j < 0 or j >= outputH or i < 0 or i >= outputW):
+                if not (j < 0 or j >= output_height or i < 0 or i >= output_width):
                     a, b, c = refIm[j, i, :]/255
             mergeIm[j - min_y, i- min_x, :] = [a, b, c]
 
