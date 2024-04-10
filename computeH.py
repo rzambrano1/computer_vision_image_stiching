@@ -215,14 +215,15 @@ def computeH(t1: npt.NDArray, t2: npt.NDArray)-> npt.NDArray:
 
     # SVD method, not used (commented out) but documented
 
-    # U, S, V = np.linalg.svd(L)  # When compute_uv is True, the result include:
-    #                             # - Vector(s) with the singular values, within each vector sorted in descending order.
-    #                             #   We are interested in the smallest singular value.
-    #                             # - Vh are unitary. The rows of Vh are the eigenvectors of L'L and the columns of U
-    #                             #   are the eigenvectors of LL'. So we are interested in the last row of Vh
-    #                             # source: https://numpy.org/doc/stable/reference/generated/numpy.linalg.svd.html
+    U, S, V = np.linalg.svd(L)  # When compute_uv is True, the result include:
+                                # - Vector(s) with the singular values, within each vector sorted in descending order.
+                                #   We are interested in the smallest singular value.
+                                # - Vh are unitary. The rows of Vh are the eigenvectors of L'L and the columns of U
+                                #   are the eigenvectors of LL'. So we are interested in the last row of Vh
+                                # source: https://numpy.org/doc/stable/reference/generated/numpy.linalg.svd.html
     
-    # homography_matrix_svd = V[-1,:]
+    homography_matrix_svd = V[-1,:]
+    homography_matrix_svd = homography_matrix_svd/homography_matrix_svd[-1]
 
-    return homography_matrix
+    return homography_matrix.reshape((3,3)), homography_matrix_svd.reshape((3,3))
     

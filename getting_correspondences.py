@@ -18,6 +18,7 @@ from scipy.ndimage.filters import convolve
 # Plot Libraries
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseButton
+from matplotlib.widgets import Cursor
 
 # Machine Learning Libraries
 from sklearn.cluster import KMeans
@@ -92,6 +93,9 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
     data_coordinates_img_A = []
     data_coordinates_img_B = []
 
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    printColor = None
+
     # Showing Image View A
     
     plt.figure()
@@ -99,10 +103,12 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
     plt.title("Image View A")
     
     def on_left_click(event):
+
         if event.button is MouseButton.LEFT:
             pixel_coordinates_img_A.append((event.x,event.y)) # Swap x <-> y in all
-            data_coordinates_img_A.append((event.xdata,event.ydata))
-            print('Image View A ->',f'data coords {event.xdata} {event.ydata},',
+            data_coordinates_img_A.append((int(event.xdata),int(event.ydata)))
+
+            print('Image View A ->',f'data coords {int(event.xdata)} {int(event.ydata)},',
                 f'pixel coords {event.x} {event.y}')
 
 
@@ -111,7 +117,6 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
             print('disconnecting callback - image view A')
             plt.disconnect(binding_id1)
             plt.close()
-
 
     binding_id1 = plt.connect('button_press_event', on_left_click)
     plt.connect('button_press_event', on_right_click)
@@ -123,10 +128,12 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
     plt.title("Image View B")
 
     def on_left_click(event):
+
         if event.button is MouseButton.LEFT:
             pixel_coordinates_img_B.append((event.x,event.y))
-            data_coordinates_img_B.append((event.xdata,event.ydata))
-            print('Image View B ->',f'data coords {event.xdata} {event.ydata},',
+            data_coordinates_img_B.append((int(event.xdata),int(event.ydata)))
+
+            print('Image View B ->',f'data coords {int(event.xdata)} {int(event.ydata)},',
                 f'pixel coords {event.x} {event.y}')
 
 
@@ -135,7 +142,6 @@ def getting_correspondences(img1: npt.NDArray[np.uint8], img2: npt.NDArray[np.ui
             print('disconnecting callback -  image view B')
             plt.disconnect(binding_id2)
             plt.close()
-
 
     binding_id2 = plt.connect('button_press_event', on_left_click)
     plt.connect('button_press_event', on_right_click)

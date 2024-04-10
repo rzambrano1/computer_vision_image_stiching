@@ -94,25 +94,26 @@ def main(input_image_name,reference_image_name):
     pixel_coord_A, pixel_coord_B, data_coord_A, data_coord_B = getting_correspondences(img_A,img_B)
 
     print("-------------------------\nCorrdinates in Image View A:\n")
-    print(pixel_coord_A)
+    print(data_coord_A)
     print("-------------------------\nCorrdinates in Image View B:\n")
-    print(pixel_coord_B)
+    print(data_coord_B)
 
     print('Saving coordinates...')
-    np.save(PATH_IMG_A_PIXEL,pixel_coord_A)
-    np.save(PATH_IMG_B_PIXEL,pixel_coord_B)
+    #np.save(PATH_IMG_A_PIXEL,pixel_coord_A)
+    #np.save(PATH_IMG_B_PIXEL,pixel_coord_B)
     np.save(PATH_IMG_A_DATA,data_coord_A)
     np.save(PATH_IMG_B_DATA,data_coord_B)
 
     # Next step: with the pixel correspondences calculating H and collect minimum and maximum values of each image
 
     print('Estimating homography matrix...')
-    #H, r1_min, r1_max, r2_min, r2_max = pre_process_correspondences(pixel_coord_A,pixel_coord_B) <- Check
-    H, r1_min, r1_max, r2_min, r2_max = pre_process_correspondences(pixel_coord_A,pixel_coord_B)
+    H, H_svd = computeH(data_coord_A,data_coord_B)
+
+    # H, r1_min, r1_max, r2_min, r2_max = pre_process_correspondences(data_coord_A,data_coord_B)
 
     # Estimating warped image
     print('Homography matrix completed...\nSampling from image B to get the warped image...')
-    warped_img_view_B, mosaic_A_B = warpImage(img_A,img_B,H,r1_min,r1_max)
+    warped_img_view_B, mosaic_A_B = warpImage(img_A,img_B,H_svd)
 
     # Final step displaying the original reference image and the inverse warp of said reference image
 
@@ -129,7 +130,6 @@ def main(input_image_name,reference_image_name):
     # plt.axis('off') 
     plt.title("Original Reference Image") 
 
-    #plt.scatter(pixel_coord_B[0,:],pixel_coord_B[1,:])  <- Check
     plt.scatter(data_coord_B[0,:],data_coord_B[1,:])
     
     # Plot 2
@@ -140,7 +140,6 @@ def main(input_image_name,reference_image_name):
     # plt.axis('off') 
     plt.title("Original Input Image - Destination Frame") # <- Destination frame for reference because the requirement to do an inverse warp 
 
-    #plt.scatter(pixel_coord_A[0,:],pixel_coord_A[1,:])  <- Check
     plt.scatter(data_coord_A[0,:],data_coord_A[1,:])
 
     # Plot 3
